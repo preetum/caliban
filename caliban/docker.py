@@ -1019,14 +1019,18 @@ def run_notebook(job_mode: c.JobMode,
   jupyter_args = [
     "-m", "jupyter", jupyter_cmd, \
     "--ip=0.0.0.0", \
-    "--port={}".format(port), \
+    f"--port={port}", \
     "--no-browser"
   ]
-  docker_args = ["-p", "{}:{}".format(port, port)] + run_args
+  mount_args = [f"--app-dir={container_home()}"] if lab else []
+
+  # maybe we can use an env variable? https://jupyter.readthedocs.io/en/latest/projects/jupyter-directories.html
+
+  docker_args = ["-p", f"{port}:{port}"] + run_args
 
   run_interactive(job_mode,
-                  entrypoint="/opt/venv/bin/python",
-                  entrypoint_args=jupyter_args,
+                  entrypoint="/opt/conda/envs/caliban/bin/python",
+                  entrypoint_args=jupyter_args + mount_args,
                   run_args=docker_args,
                   inject_notebook=inject_arg,
                   jupyter_version=version,
