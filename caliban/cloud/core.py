@@ -296,7 +296,7 @@ def create_requests(
   ml = ml_api(credentials_path)
 
   jobs = ml.projects().jobs()
-
+  
   for job_spec in logged_specs(specs):
     # replace the jobId field with a uid-appended id upon request creation
     spec = deepcopy(job_spec.spec)
@@ -304,6 +304,15 @@ def create_requests(
     index = spec['jobId'].split('_')[-1]
     job_name = '_'.join(spec['jobId'].split('_')[:-1])
     spec['jobId'] = f'{job_name}_{uid}_{index}'
+
+    # Add VPC peering to the 'default' network, so that AI instance jobs
+    # can access VMs in the same project.
+    # See: https://cloud.google.com/ai-platform/training/docs/vpc-peering#submit-job
+    proj_num = '603523611297' # project number (HARDCODED)
+    spec['trainingInput']['network'] = f'projects/{proj_num}/global/networks/default'
+    print('>> TRAINING SPEC:')
+    print(spec)
+
     cb = job_callback(spec=job_spec, project_id=project_id, body=spec)
     yield jobs.create(body=spec, parent=parent), job_spec, cb
 
